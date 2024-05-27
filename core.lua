@@ -55,7 +55,7 @@ local altColor = "\124cFFb8b8b8"
 
 local origChatFrame_OnHyperlinkShow = ChatFrame_OnHyperlinkShow
 
-local statusEnableText = "TMB Tooltips is currently: Disabled"
+local statusEnableText = "EVCP Tooltips is currently: Disabled"
 
 local currentPlayer = UnitName("player")
 
@@ -82,7 +82,7 @@ OnClick = function(self,button,down)
 	end
 end,
 OnTooltipShow = function(tooltip) -- Icon tooltip
-	tooltip:AddLine("That's My BIS Tooltips")
+	tooltip:AddLine("EVCP Tooltips")
 	tooltip:AddLine("Revision    : 106-Wrath") -- EDIT TOC and PKMETA
 	tooltip:AddLine("Left click : Enable/Disable display")
 	tooltip:AddLine("Right click: Open config")
@@ -144,7 +144,7 @@ local function newConfigPanel()
 	configShown = true
 
 	syncFrame = AceGUI:Create("Frame")
-	syncFrame:SetTitle("Thats my bis Tooltips")
+	syncFrame:SetTitle("EVCP Tooltips")
 	syncFrame.sizer_se:Hide()
 	syncFrame.sizer_s:Hide()
 	syncFrame.sizer_e:Hide()
@@ -174,7 +174,7 @@ function popupConfig()
 
 
 	popup = AceGUI:Create("Frame")
-	popup:SetTitle("Thats My BIS Tooltips")
+	popup:SetTitle("EVCP Tooltips")
 	popup:SetStatusText(statusEnableText)
 
 	popup.sizer_se:Hide()
