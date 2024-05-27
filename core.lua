@@ -746,7 +746,7 @@ function ParseText(input)
 	if input == nil then return "NoData" end
 	local headers = {
 	--All export
-		"type,raid_group_name,member_name,character_name,character_class,character_is_alt,character_inactive_at,character_note,sort_order,item_name,item_id,is_offspec,note,received_at,import_id,item_note,item_prio_note,item_tier,item_tier_label,created_at,updated_at,",
+		"type,raid_group_name,member_name,character_name,character_class,character_is_alt,character_inactive_at,character_note,sort_order,item_name,item_id,is_offspec,note,received_at,import_id,item_note,item_prio_note,officer_note,item_tier,item_tier_label,created_at,updated_at,instance_name,source_name,",
 	-- Tailored tmb export
 		"type,character_name,character_class,character_is_alt,character_inactive_at,character_note,sort_order,item_id,is_offspec,received_at,item_prio_note,item_tier_label," 
 	}
@@ -767,8 +767,8 @@ function ParseText(input)
 			headerData = ParseCSVLine(parsedLines[lineKey])
 		else
 			for key,value in pairs(ParseCSVLine(line)) do
-				if key == 1 and value == "item_note" then
-				end
+				--if key == 1 and value == "item_note" then
+				--end
 				entry[ headerData[key] ] = value
 			end
 			table.insert(parsedEntries, entry)
@@ -801,7 +801,7 @@ function ParseText(input)
 				tempCharTable.character_is_alt = tonumber(e.character_is_alt)
 				tempCharTable.is_offspec = tonumber(e.is_offspec)
 				if ItemListsDB.showMemberNotes then
-					tempCharTable.character_note = e.character_note
+					tempCharTable.character_note = e.note
 				end
 
 				if tempTable ~= nil then tempTable = tempTable.wishlist end -- Look at the wishlist element if it exist then load it
