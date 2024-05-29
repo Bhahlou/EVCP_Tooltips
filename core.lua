@@ -1,4 +1,4 @@
-ThatsMyBis = LibStub("AceAddon-3.0"):NewAddon("ThatsMyBis", "AceConsole-3.0", "AceEvent-3.0", "AceComm-3.0")
+EVCPTT = LibStub("AceAddon-3.0"):NewAddon("EVCP Tooltips", "AceConsole-3.0", "AceEvent-3.0", "AceComm-3.0")
 local LibAceSerializer = LibStub:GetLibrary("AceSerializer-3.0")
 local libc = LibStub:GetLibrary("LibCompress")
 
@@ -59,36 +59,32 @@ local statusEnableText = "EVCP Tooltips is currently: Disabled"
 
 local currentPlayer = UnitName("player")
 
-
-
-
-
-local TMBLDB = LibStub("LibDataBroker-1.1"):NewDataObject("TMBTooltips", {
+local TMBLDB = LibStub("LibDataBroker-1.1"):NewDataObject("EVCPTooltips", {
 type = "data source",
-text = "TMB Tooltips",
-icon = "Interface\\Icons\\inv_misc_note_01",
+text = "EVCP Tooltips",
+icon = "Interface/AddOns/EVCP Tooltips/Assets/Buttons/EVCP Logo",
 OnClick = function(self,button,down)
 	if button == "LeftButton" then
 		if ItemListsDB.enabled then 
-			statusEnableText = "TMB Tooltips is currently: Disabled"
+			statusEnableText = "EVCP Tooltips is currently: Disabled"
 			ItemListsDB.enabled = false
 		else
-			statusEnableText = "TMB Tooltips is currently: Enabled"
+			statusEnableText = "EVCP Tooltips is currently: Enabled"
 			ItemListsDB.enabled = true
 		end
-	ThatsMyBis:Print(statusEnableText)
+	EVCPTT:Print(statusEnableText)
 	elseif button == "RightButton" then
 		popupConfig()
 	end
 end,
 OnTooltipShow = function(tooltip) -- Icon tooltip
 	tooltip:AddLine("EVCP Tooltips")
-	tooltip:AddLine("Revision    : 106-Wrath") -- EDIT TOC and PKMETA
-	tooltip:AddLine("Left click : Enable/Disable display")
-	tooltip:AddLine("Right click: Open config")
-	tooltip:AddLine("Hold Alt   : Change tooltip display")
-	tooltip:AddLine("Chat CMD   : /tmb")
-	tooltip:AddLine("Database ID: " .. ItemListsDB.itemNotes.ID)
+	tooltip:AddLine("Revision    : 1.0.0") -- EDIT TOC and PKMETA
+	tooltip:AddLine("Left click  : Enable/Disable display")
+	tooltip:AddLine("Right click : Open config")
+	tooltip:AddLine("Hold Alt    : Change tooltip display")
+	tooltip:AddLine("Chat CMD    : /evcp")
+	tooltip:AddLine("Database ID : " .. ItemListsDB.itemNotes.ID)
 end,
 })
 
@@ -118,15 +114,9 @@ function showSync()
 	syncFrame:AddChild(SyncButton)
 	SyncButton:SetCallback("OnClick", function (obj, button, down)
 		-- Start sync operation
-		ThatsMyBis:SendComm(targetField:GetText(), "RTS", ItemListsDB.itemNotes.ID)
+		EVCPTT:SendComm(targetField:GetText(), "RTS", ItemListsDB.itemNotes.ID)
 		
 	end)
-
-
-
-
-
-
 
 	syncFrame:SetCallback("OnClose", 
 	function(widget)
@@ -151,9 +141,6 @@ local function newConfigPanel()
 	syncFrame:SetWidth(600)
 	syncFrame:SetHeight(500)
 
-
-
-
 	syncFrame:SetCallback("OnClose", 
 	function(widget)
 	  AceGUI:Release(widget)
@@ -170,8 +157,6 @@ function popupConfig()
 	end
 	
 	frameShown = true
-
-
 
 	popup = AceGUI:Create("Frame")
 	popup:SetTitle("EVCP Tooltips")
@@ -363,17 +348,17 @@ function popupConfig()
 end
 
 
-function ThatsMyBis:OnInitialize() --Fires when the addon is being set up.
+function EVCPTT:OnInitialize() --Fires when the addon is being set up.
 	self.db = LibStub("AceDB-3.0"):New("TMBDB", { profile = { minimap = { hide = false, }, }, })
-	TMBIcon:Register("TMBTooltips", TMBLDB,  self.db.profile.minimap) 
-	self:RegisterChatCommand("tmb", "ChatCommands") 
-	self:RegisterComm("TMBSync", ThatsMyBis:OnCommReceived())
+	TMBIcon:Register("EVCPTooltips", TMBLDB,  self.db.profile.minimap) 
+	self:RegisterChatCommand("evcp", "ChatCommands") 
+	self:RegisterComm("TMBSync", EVCPTT:OnCommReceived())
 
 end
 
 
 
-function ThatsMyBis:OnEnable() --Fires when the addon loads, makes sure there is a db to look at.
+function EVCPTT:OnEnable() --Fires when the addon loads, makes sure there is a db to look at.
 
 	if ItemListsDB == nil then ItemListsDB = {} end
 	if ItemListsDB.itemNotes == nil then ItemListsDB.itemNotes = {} end
@@ -391,13 +376,13 @@ function ThatsMyBis:OnEnable() --Fires when the addon loads, makes sure there is
 	if ItemListsDB.onlyInRaid == nil then ItemListsDB.onlyInRaid = false end
 	if ItemListsDB.onlyRaidMembers == nil then ItemListsDB.onlyRaidMembers = false end
 	if ItemListsDB.itemNotes.ID == nil then ItemListsDB.itemNotes.ID = 0 end
-	if ItemListsDB.showMemberNotess == nil then ItemListsDB.showMemberNotes = false end
+	if ItemListsDB.showMemberNotess == nil then ItemListsDB.showMemberNotes = true end
 	if ItemListsDB.displayOS == nil then ItemListsDB.displayOS = true end
 	if ItemListsDB.lootTableTest == nil then ItemListsDB.lootTableTest = {} end
 
 
 	if ItemListsDB.enabled then 
-		statusEnableText = "TMB Tooltips is currently: Enabled"
+		statusEnableText = "EVCP Tooltips is currently: Enabled"
 	end
 	self:RegisterEvent("CHAT_MSG_LOOT", "HandleEvent")
 	
@@ -420,7 +405,7 @@ end
 
 
 
-function ThatsMyBis:HandleEvent(self, event, ...)
+function EVCPTT:HandleEvent(self, event, ...)
 	local tempLootEntry = {}
 	--local zone = GetRealZoneText();
 	local itemLink = string.match(event,"|%x+|Hitem:.-|h.-|h|r")
@@ -434,29 +419,29 @@ function ThatsMyBis:HandleEvent(self, event, ...)
 	tempLootEntry = {LootersName, itemId, itemName}
 	if quality and quality >= 6 then
 		ItemListsDB.lootTableTest[GetServerTime()] = tempLootEntry
-		ThatsMyBis:Print(GetServerTime(), LootersName, itemId, itemName)
+		EVCPTT:Print(GetServerTime(), LootersName, itemId, itemName)
 	end
 end
 
-function ThatsMyBis:ChatCommands(arg)
+function EVCPTT:ChatCommands(arg)
 	if arg == "" then 
 		popupConfig()
 	elseif arg == "minimap" then
 		self.db.profile.minimap.hide = not self.db.profile.minimap.hide 
 		if self.db.profile.minimap.hide then
-			TMBIcon:Hide("TMBTooltips") 
+			TMBIcon:Hide("EVCPTooltips") 
 		else 
-			TMBIcon:Show("TMBTooltips") 
+			TMBIcon:Show("EVCPTooltips") 
 		end 
 	elseif arg == "toggle" then
 		if ItemListsDB.enabled then 
-			statusEnableText = "TMB Tooltips is currently: Disabled"
+			statusEnableText = "EVCP Tooltips is currently: Disabled"
 			ItemListsDB.enabled = false
 		else
-			statusEnableText = "TMB Tooltips is currently: Enabled"
+			statusEnableText = "EVCP Tooltips is currently: Enabled"
 			ItemListsDB.enabled = true
 		end
-		ThatsMyBis:Print(statusEnableText)
+		EVCPTT:Print(statusEnableText)
 	elseif arg == "sync" then
 		showSync()
 	elseif arg == "test" then
@@ -464,7 +449,7 @@ function ThatsMyBis:ChatCommands(arg)
 	elseif arg == "notes" then
 		ItemListsDB.showMemberNotes = not ItemListsDB.showMemberNotes
 	else 
-		ThatsMyBis:Print("Thats my BIS command arguments\nminimap - toggle minimap icon\ntoggle - enable/disable function\nno argument - open config\nanything else - show this text")
+		EVCPTT:Print("Thats my BIS command arguments\nminimap - toggle minimap icon\ntoggle - enable/disable function\nno argument - open config\nanything else - show this text")
 	end
 
 end 
@@ -580,7 +565,7 @@ local function ModifyItemTooltip( tt ) -- Function for modifying the tooltip
 					smallestWish = table.remove(itemWishes,smallestKey)
 					if smallestWish == nil then break end
 					local altStatus = ""
-					local linebreaker = " "
+					local linebreaker = "\n"
 					local noteHolder = ""
 					local OSText = ""
 					if ItemListsDB.showMemberNotes then 
@@ -588,7 +573,7 @@ local function ModifyItemTooltip( tt ) -- Function for modifying the tooltip
 							noteHolder = " {"..smallestWish.character_note.."} "
 						end
 					end
-					if i % 5 == 0 then linebreaker = "\n" end
+
 					if ItemListsDB.displayAlts and smallestWish.character_is_alt == 1 then altStatus = altColor end
 					if ItemListsDB.displayOS and smallestWish.is_offspec == 1 then OSText = "-OS" end
 					wishlistString = wishlistString .. classColorsTable[ smallestWish.character_class ] .. smallestWish.character_name .. altStatus .. "[" .. smallestWish.sort_order .. OSText .. "]\124r" .. noteHolder .. linebreaker
@@ -800,7 +785,7 @@ function ParseText(input)
 				tempCharTable.sort_order = tonumber(e.sort_order)
 				tempCharTable.character_is_alt = tonumber(e.character_is_alt)
 				tempCharTable.is_offspec = tonumber(e.is_offspec)
-				if ItemListsDB.showMemberNotes then
+				if ItemListsDB.showMemberNotes and e.note ~= "" then
 					tempCharTable.character_note = e.note
 				end
 
@@ -870,7 +855,7 @@ function ParseText(input)
 	checksum = libc:fcs16init()
 	checksum = libc:fcs16update(checksum,serializedTable)
 	checksum = libc:fcs16final(checksum)
-	ThatsMyBis:Print("Added data: "..checksum)
+	EVCPTT:Print("Added data: "..checksum)
 	noteTable["ID"] = checksum
 	ItemListsDB["itemNotes"] = noteTable -- Add it to peristent storage
 	
@@ -917,7 +902,7 @@ function ParseCSVLine (line,sep)
 	return res
 end
 
-function ThatsMyBis:OnCommReceived(prefix, serializedMsg, distri, sender)
+function EVCPTT:OnCommReceived(prefix, serializedMsg, distri, sender)
 	if prefix == "TMBSync" then
 		if sender ~= currentPlayer then 
 			if syncShown then 
@@ -925,63 +910,63 @@ function ThatsMyBis:OnCommReceived(prefix, serializedMsg, distri, sender)
 				local valid, command, data = LibAceSerializer:Deserialize(decompress)
 				if valid then
 					if command == "INFO" then
-						ThatsMyBis:Print(data)
+						EVCPTT:Print(data)
 						syncFrame:SetStatusText("Ready")
 					elseif command == "RTS" then
 						--Someone is asking if we're ready to recieve, check their id against ours.
 						if ItemListsDB.itemNotes.ID == data then
-							ThatsMyBis:SendComm(sender,"INFO", currentPlayer .. " already have this data")
+							EVCPTT:SendComm(sender,"INFO", currentPlayer .. " already have this data")
 						else
-							ThatsMyBis:SendComm(sender,"RTR","Please donate if you like this addon") 
+							EVCPTT:SendComm(sender,"RTR","Please donate if you like this addon") 
 						end
 					elseif command == "RTR" then
 						--Sender is ready to recieve, Transmit data.
-						ThatsMyBis:Print("Sending data to " .. sender)
-						ThatsMyBis:SendComm(sender, "INFO", "You are about to receive TMB data from ".. currentPlayer)
-						ThatsMyBis:SendComm(sender, "DBID", ItemListsDB.itemNotes.ID)
-						ThatsMyBis:SendComm(sender, "TABLES", ItemListsDB.itemNotes)
+						EVCPTT:Print("Sending data to " .. sender)
+						EVCPTT:SendComm(sender, "INFO", "You are about to receive TMB data from ".. currentPlayer)
+						EVCPTT:SendComm(sender, "DBID", ItemListsDB.itemNotes.ID)
+						EVCPTT:SendComm(sender, "TABLES", ItemListsDB.itemNotes)
 
 					elseif command == "TABLES" then
 						ItemListsDB.itemNotes = data
-						ThatsMyBis:Print("ID " .. ItemListsDB.itemNotes.ID .. " have been imported, remember to exit the game gracefully or reload to save it.")
-						ThatsMyBis:SendComm(sender, "INFO", currentPlayer .. " is now on ID " .. ItemListsDB.itemNotes.ID )
+						EVCPTT:Print("ID " .. ItemListsDB.itemNotes.ID .. " have been imported, remember to exit the game gracefully or reload to save it.")
+						EVCPTT:SendComm(sender, "INFO", currentPlayer .. " is now on ID " .. ItemListsDB.itemNotes.ID )
 					elseif command == "DBID" then
 						ItemListsDB.itemNotes.ID = data
 						
 					end
 				else
-					ThatsMyBis:Print("Received invalid data, make sure you're all running the latest version.")
+					EVCPTT:Print("Received invalid data, make sure you're all running the latest version.")
 				end
 			else
-				ThatsMyBis:Print(sender .." is trying to send you data, however sync window is not open. Do /tmb sync and have them re-send")
-				ThatsMyBis:SendComm(sender,"INFO", currentPlayer .." does not have sync window open. Try again")
+				EVCPTT:Print(sender .." is trying to send you data, however sync window is not open. Do /tmb sync and have them re-send")
+				EVCPTT:SendComm(sender,"INFO", currentPlayer .." does not have sync window open. Try again")
 			end
 		end
 	end
 end
 
-function ThatsMyBis:SendComm(target, command, data )
+function EVCPTT:SendComm(target, command, data )
     local serialized = nil
     if data then
         serialized = LibAceSerializer:Serialize(command, data)
 		compressed = libc:Compress(serialized)
 	end
 	if target == "PARTY" then 
-		ThatsMyBis:SendCommMessage("TMBSync", compressed, target, "BULK",ThatsMyBis.commCallback)
+		EVCPTT:SendCommMessage("TMBSync", compressed, target, "BULK",EVCPTT.commCallback)
 	elseif target == "RAID" then 
-		ThatsMyBis:SendCommMessage("TMBSync", compressed, target, "BULK",ThatsMyBis.commCallback)
+		EVCPTT:SendCommMessage("TMBSync", compressed, target, "BULK",EVCPTT.commCallback)
 	elseif target == "GUILD" then 
-		ThatsMyBis:SendCommMessage("TMBSync", compressed, target, "BULK",ThatsMyBis.commCallback)
+		EVCPTT:SendCommMessage("TMBSync", compressed, target, "BULK",EVCPTT.commCallback)
 	else 
-		ThatsMyBis:SendCommMessage("TMBSync", compressed, "WHISPER", target, "BULK",ThatsMyBis.commCallback)
+		EVCPTT:SendCommMessage("TMBSync", compressed, "WHISPER", target, "BULK",EVCPTT.commCallback)
 	end
     
 end
 
-function ThatsMyBis:commCallback(num,total) 
+function EVCPTT:commCallback(num,total) 
 	--syncFrame:SetStatusText("Sending: ".. math.floor(tonumber(num)/1000) .. " of ".. math.floor(tonumber(total)/1000) .. " total")
 	syncFrame:SetStatusText("Sending: ".. math.floor(tonumber(num)/tonumber(total)*100).."%")
-	--ThatsMyBis:Print(num,total)
+	--EVCPTT:Print(num,total)
 end
 
 function ParseItemIdOrLink(item_link_or_id)
