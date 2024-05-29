@@ -1,5 +1,5 @@
 ## Interface: 40400
-## Version: R106
+## Version: 1.0.1
 ## Title: EVCP Tooltips
 ## Notes: Fork from original TMB Tooltips, displaying Thatsmybis data in item tooltips
 ## Author: Bhahlou@Auberdine
