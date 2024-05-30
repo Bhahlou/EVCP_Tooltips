@@ -676,7 +676,6 @@ local function ModifyItemTooltip( tt ) -- Function for modifying the tooltip
 		if ItemListsDB.forceReceivedList == true then
 			recievedLogic(itemNotes,tt)
 		end
-
 	else 
 		recievedLogic(itemNotes,tt)
 	end
@@ -702,29 +701,8 @@ function recievedLogic(inputData,tt)
 	end
 end
 
-
--- //TODO: Affects more than the static item frame. Need to look into this later
---[[ ChatFrame_OnHyperlinkShow = function(...) -- Hook into the static item info window, not the tooltip.
-    local chatFrame, link, text, button = ...
-    local result = origChatFrame_OnHyperlinkShow(...)
-    
-        ShowUIPanel(ItemRefTooltip)
-        if (not ItemRefTooltip:IsVisible()) then
-            ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE")
-        end
-        
-       	ModifyItemTooltip(ItemRefTooltip)
-
-        ItemRefTooltip:Show(); ItemRefTooltip:Show()
-
-    --return result
-end ]]
-
-
-
 local function InitFrame() --Starts the listener for tooltips
 	GameTooltip:HookScript( "OnTooltipSetItem", ModifyItemTooltip )
-	
 end
 
 function ParseText(input)
@@ -735,7 +713,6 @@ function ParseText(input)
 	-- Tailored tmb export
 		"type,character_name,character_class,character_is_alt,character_inactive_at,character_note,sort_order,item_id,is_offspec,received_at,item_prio_note,item_tier_label," 
 	}
-
 
 	local parsedLines = {}
 	local parsedEntries = {}
@@ -752,103 +729,37 @@ function ParseText(input)
 			headerData = ParseCSVLine(parsedLines[lineKey])
 		else
 			for key,value in pairs(ParseCSVLine(line)) do
-				--if key == 1 and value == "item_note" then
-				--end
-				entry[ headerData[key] ] = value
+				entry[ headerData[key] ] = value	
 			end
 			table.insert(parsedEntries, entry)
 		end
 	end
 	table.remove(parsedEntries) -- Pop of the malformed last entry.
+	
 	local noteTable = {}
 	
-
 	for k,e in pairs(parsedEntries) do
 		local tempTable = {}
 		local tempCharTable = {}
-		local checkToken = {}
+		local relatedToken
+		local relatedMultiTokens
 		local currentItemID = nil
+
 		if e.character_inactive_at == "" then
 			currentItemID = tonumber(e.item_id)
-			checkToken = tokens[currentItemID]  
-			if checkToken ~= nil then currentItemID = checkToken end
-			tempTable = noteTable[ currentItemID ] --Try and load the item element
-			if tempTable == nil then noteTable[ currentItemID ] = {} end -- Make an array because this is the first time the item is seen
 
-			if e.received_at ~= "" then 
-				e.type = "received"
+			-- Check whether item_id is a token to move the item related info to token(s)
+			relatedToken = tokens[currentItemID]  
+			if relatedToken ~= nil then currentItemID = relatedToken end
+
+			relatedMultiTokens = multiTokens[currentItemID]
+			if relatedMultiTokens ~= nil then
+				for _, tokenItemId in ipairs(relatedMultiTokens) do
+					noteTable = EVCPTT:addItemNote(noteTable, tokenItemId, e)
+				end
+				noteTable = EVCPTT:addItemNote(noteTable, currentItemID, e)
 			end
-
-			if e.type == "wishlist" then
-				tempCharTable.character_class = classToID[e.character_class]
-				tempCharTable.character_name = e.character_name
-				tempCharTable.sort_order = tonumber(e.sort_order)
-				tempCharTable.character_is_alt = tonumber(e.character_is_alt)
-				tempCharTable.is_offspec = tonumber(e.is_offspec)
-				if ItemListsDB.showMemberNotes and e.note ~= "" then
-					tempCharTable.character_note = e.note
-				end
-
-				if tempTable ~= nil then tempTable = tempTable.wishlist end -- Look at the wishlist element if it exist then load it
-				if tempTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
-					tempTable = {}
-					table.insert(tempTable,tempCharTable)
-				else -- Else insert it into the old one before saving.
-					table.insert(tempTable,tempCharTable)
-				end
-				noteTable[currentItemID].wishlist = tempTable
-			elseif e.type == "prio" then
-				tempCharTable.character_class = classToID[e.character_class]
-				tempCharTable.character_name = e.character_name
-				tempCharTable.sort_order = tonumber(e.sort_order)
-				tempCharTable.character_is_alt = tonumber(e.character_is_alt)
-				tempCharTable.is_offspec = tonumber(e.is_offspec)
-				if ItemListsDB.showMemberNotes then
-					tempCharTable.character_note = e.character_note
-				end
-
-				if tempTable ~= nil then tempTable = tempTable.priolist end -- Look at the priolist element if it exist then load it
-				if tempTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
-					tempTable = {}
-					table.insert(tempTable,tempCharTable)
-				else -- Else insert it into the old one before saving.
-					table.insert(tempTable,tempCharTable)
-				end
-				noteTable[currentItemID].priolist = tempTable
-			elseif e.type == "received" then 
-				local skip = false
-				if noteTable[currentItemID].received ~= nil then
-					-- Search the array to check for duplicates
-					for reKey,reEnt in pairs(noteTable[currentItemID].received) do
-						if reEnt.character_name == e.character_name then
-							skip = true
-							break
-						end
-					end
-				end
-				if not skip then 
-					tempCharTable.character_class = classToID[e.character_class]
-					tempCharTable.character_name = e.character_name
-					tempCharTable.character_is_alt = tonumber(e.character_is_alt)
-					tempCharTable.is_offspec = tonumber(e.is_offspec)
-
-					if tempTable ~= nil then tempTable = tempTable.received end -- Look at the recieved element if it exist then load it
-					if tempTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
-						tempTable = {}
-						table.insert(tempTable,tempCharTable)
-					else -- Else insert it into the old one before saving.
-						table.insert(tempTable,tempCharTable)
-					end
-					noteTable[currentItemID].received = tempTable
-				end
-			elseif e.type == "item_note" then 
-				noteTable[currentItemID].prioNote = e.item_prio_note
-				noteTable[currentItemID].guildNote = e.item_note
-				noteTable[currentItemID].rank = e.item_tier_label
-			end
-
 		end
-		 -- 
 	end
 	local checksum = ""
 	local serializedTable = LibAceSerializer:Serialize(noteTable)
@@ -860,7 +771,89 @@ function ParseText(input)
 	ItemListsDB["itemNotes"] = noteTable -- Add it to peristent storage
 	
 	return "Success, data saved"
+end
+
+function EVCPTT:addItemNote(noteTable, currentItemID, entry)
+	local itemTable = {};
+	local characterTable = {}
+
+	itemTable = noteTable[ currentItemID ] --Try and load the item element
+	if itemTable == nil then noteTable[ currentItemID ] = {} end -- Make an array because this is the first time the item is seen
+
+	if entry.received_at ~= "" then 
+		entry.type = "received"
 	end
+
+	if entry.type == "wishlist" then
+		characterTable.character_class = classToID[entry.character_class]
+		characterTable.character_name = entry.character_name
+		characterTable.sort_order = tonumber(entry.sort_order)
+		characterTable.character_is_alt = tonumber(entry.character_is_alt)
+		characterTable.is_offspec = tonumber(entry.is_offspec)
+		if ItemListsDB.showMemberNotes and entry.note ~= "" then
+			characterTable.character_note = entry.note
+		end
+
+		if itemTable ~= nil then itemTable = itemTable.wishlist end -- Look at the wishlist element if it exist then load it
+		if itemTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
+			itemTable = {}
+			table.insert(itemTable,characterTable)
+		else -- Else insert it into the old one before saving.
+			table.insert(itemTable,characterTable)
+		end
+		noteTable[currentItemID].wishlist = itemTable
+	elseif entry.type == "prio" then
+		characterTable.character_class = classToID[entry.character_class]
+		characterTable.character_name = entry.character_name
+		characterTable.sort_order = tonumber(entry.sort_order)
+		characterTable.character_is_alt = tonumber(entry.character_is_alt)
+		characterTable.is_offspec = tonumber(entry.is_offspec)
+		if ItemListsDB.showMemberNotes then
+			characterTable.character_note = entry.character_note
+		end
+
+		if itemTable ~= nil then itemTable = itemTable.priolist end -- Look at the priolist element if it exist then load it
+		if itemTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
+			itemTable = {}
+			table.insert(itemTable,characterTable)
+		else -- Else insert it into the old one before saving.
+			table.insert(itemTable,characterTable)
+		end
+		noteTable[currentItemID].priolist = itemTable
+	elseif entry.type == "received" then 
+		local skip = false
+		if noteTable[currentItemID].received ~= nil then
+			-- Search the array to check for duplicates
+			for reKey,reEnt in pairs(noteTable[currentItemID].received) do
+				if reEnt.character_name == entry.character_name then
+					skip = true
+					break
+				end
+			end
+		end
+		if not skip then 
+			characterTable.character_class = classToID[entry.character_class]
+			characterTable.character_name = entry.character_name
+			characterTable.character_is_alt = tonumber(entry.character_is_alt)
+			characterTable.is_offspec = tonumber(entry.is_offspec)
+
+			if itemTable ~= nil then itemTable = itemTable.received end -- Look at the recieved element if it exist then load it
+			if itemTable == nil then --If the loaded item is nil then its the first wish for this item so just save it directly
+				itemTable = {}
+				table.insert(itemTable,characterTable)
+			else -- Else insert it into the old one before saving.
+				table.insert(itemTable,characterTable)
+			end
+			noteTable[currentItemID].received = itemTable
+		end
+	elseif entry.type == "item_note" then 
+		noteTable[currentItemID].prioNote = entry.item_prio_note
+		noteTable[currentItemID].guildNote = entry.item_note
+		noteTable[currentItemID].rank = entry.item_tier_label
+	end
+
+	return noteTable
+end
 
 function ParseCSVLine (line,sep) 
 	local res = {}
@@ -980,9 +973,6 @@ function ParseItemIdOrLink(item_link_or_id)
 		return nil
 	end
 end
-
-
-
 
 tokens = {
 	[35751]=30183,
@@ -2575,6 +2565,415 @@ tokens = {
 	[44661]=44577,
 	[44662]=44577,
 	[44664]=44577,
-	[44665]=44577}
+	[44665]=44577,
+}
+multiTokens = {
+    -- T11 --
+    -- DK DPS
+    [65181] = { -- DPS Head
+    	65002, -- Token HM
+    	66998 -- Essence of the Forlorn
+    },
+    [65183] = { -- DPS Shoulder
+    	65089, -- Token HM
+    	66998 -- Essence of the Forlorn
+    },
+    [65179] = { -- DPS Chest
+	    67425, -- Token HM
+	    66998 -- Essence of the Forlorn
+    },
+    [65180] = { -- DPS Gloves
+	    67431, -- Token HM
+	    66998 -- Essence of the Forlorn
+    },
+    [65182] = { -- DPS Legs
+	    67426, -- Token HM
+	    66998 -- Essence of the Forlorn
+    },
+	-- DK Tank
+	[65186] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65188] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65184] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65185] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65187] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Druid --
+	-- Feral
+	[65190] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65193] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65192] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65189] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65191] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Resto
+	[65195] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65198] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65197] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65194] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65196] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Balance
+	[65200] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65203] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65202] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65199] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65201] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Mage --
+	[65210] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65213] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65212] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65209] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65211] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Rogue --
+	[65241] = { -- DPS Head
+		65002, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65243] = { -- DPS Shoulder
+		65089, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65239] = { -- DPS Chest
+		67425, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65240] = { -- DPS Gloves
+		67431, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65242] = { -- DPS Legs
+		67426, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Hunter --
+	[65206] = { -- DPS Head
+		65000, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65208] = { -- DPS Shoulder
+		65087, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65204] = { -- DPS Chest
+		67424, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65205] = { -- DPS Gloves
+		67430, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65207] = { -- DPS Legs
+		67427, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	-- Warrior --
+	-- DPS
+	[65266] = { -- DPS Head
+	 	65000, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65268] = { -- DPS Shoulder
+	 	65087, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65264] = { -- DPS Chest
+	 	67424, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65265] = { -- DPS Gloves
+	 	67430, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65267] = { -- DPS Legs
+	 	67427, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Tank
+	[65271] = { -- Head
+	 	65000, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65273] = { -- Shoulder
+	 	65087, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65269] = { -- Chest
+	 	67424, -- Token HM
+		66998 -- Essence of the Forlorn
+	},
+	[65270] = { -- DPS Gloves
+	 	67430, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65272] = { -- Legs
+	 	67427, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Shaman --
+	-- Heal
+	[65246] = { -- Head
+	 	65000, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65248] = { -- Shoulder
+	 	65087, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65244] = { -- Chest
+	 	67424, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65245] = { -- Gloves
+	 	67430, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65247] = { -- Legs
+	 	67427, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Enhance
+	[65251] = { -- Head
+	 	65000, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65253] = { -- Shoulder
+	 	65087, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65249] = { -- Chest
+	 	67424, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65250] = { -- Gloves
+	 	67430, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65252] = { -- Legs
+	 	67427, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Elem
+	[65256] = { -- Head
+	 	65000, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65258] = { -- Shoulder
+	 	65087, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65254] = { -- Chest
+	 	67424, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65255] = { -- Gloves
+	 	67430, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65257] = { -- Legs
+	 	67427, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Paladin --
+	-- Ret
+	[65216] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65218] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65214] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65215] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65217] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Heal
+	[65221] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65223] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65219] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65220] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65222] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Prot
+	[65226] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65228] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65224] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65225] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65227] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Priest --
+	-- Heal
+	[65230] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65233] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65232] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65229] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65231] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Shadow
+	[65235] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65238] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65237] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65234] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65236] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	-- Warlock
+	[65260] = { -- Head
+	 	65001, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65263] = { -- Shoulder
+	 	65088, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65262] = { -- Chest
+	 	67423, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65259] = { -- Gloves
+	 	67429, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+	[65261] = { -- Legs
+	 	67428, -- Token HM
+	 	66998 -- Essence of the Forlorn
+	},
+}
+
 
 InitFrame()
