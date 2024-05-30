@@ -79,7 +79,7 @@ OnClick = function(self,button,down)
 end,
 OnTooltipShow = function(tooltip) -- Icon tooltip
 	tooltip:AddLine("EVCP Tooltips")
-	tooltip:AddLine("Revision    : 1.0.0") -- EDIT TOC and PKMETA
+	tooltip:AddLine("Revision    : @project-version@") -- EDIT TOC and PKMETA
 	tooltip:AddLine("Left click  : Enable/Disable display")
 	tooltip:AddLine("Right click : Open config")
 	tooltip:AddLine("Hold Alt    : Change tooltip display")
@@ -757,8 +757,8 @@ function ParseText(input)
 				for _, tokenItemId in ipairs(relatedMultiTokens) do
 					noteTable = EVCPTT:addItemNote(noteTable, tokenItemId, e)
 				end
-				noteTable = EVCPTT:addItemNote(noteTable, currentItemID, e)
 			end
+			noteTable = EVCPTT:addItemNote(noteTable, currentItemID, e)
 		end
 	end
 	local checksum = ""
