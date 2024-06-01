@@ -79,7 +79,7 @@ OnClick = function(self,button,down)
 end,
 OnTooltipShow = function(tooltip) -- Icon tooltip
 	tooltip:AddLine("EVCP Tooltips")
-	tooltip:AddLine("Revision    : @project-version@") -- EDIT TOC and PKMETA
+	tooltip:AddLine("Revision    : 1.2.0") -- EDIT TOC and PKMETA
 	tooltip:AddLine("Left click  : Enable/Disable display")
 	tooltip:AddLine("Right click : Open config")
 	tooltip:AddLine("Hold Alt    : Change tooltip display")
@@ -227,7 +227,7 @@ function popupConfig()
 	checkboxGroup:AddChild(check10)
 
 	local check11 = AceGUI:Create("CheckBox")
-	check11:SetLabel("Exclude non-raid members")
+	check11:SetLabel("Exclude ungrouped members")
 	check11:SetValue(ItemListsDB.onlyRaidMembers)
 	checkboxGroup:AddChild(check11)
 
@@ -240,7 +240,7 @@ function popupConfig()
 
 	local slider1 = AceGUI:Create("Slider")
 	slider1:SetValue(ItemListsDB.maxNames)
-	slider1:SetSliderValues(1,10,1)
+	slider1:SetSliderValues(1,40,1)
 	slider1:SetLabel("How many names to display")
 	slider1:SetRelativeWidth(1)
 	textboxGroup:AddChild(slider1)
@@ -527,11 +527,9 @@ local function ModifyItemTooltip( tt ) -- Function for modifying the tooltip
 			if itemNotes.wishlist ~= nil then
 				for k,v in pairs(itemNotes.wishlist) do
 					add = false
-					if ItemListsDB.onlyRaidMembers then
-						if UnitInRaid(v.character_name) ~= nil then
-							add = true
-						end
-					else
+					if ItemListsDB.onlyRaidMembers and IsInGroup() and UnitInParty(v.character_name) then
+						add = true
+					elseif not ItemListsDB.onlyRaidMembers or not IsInGroup() then
 						add = true
 					end
 
