@@ -807,7 +807,7 @@ function EVCPTT:addItemNote(noteTable, currentItemID, entry)
 		characterTable.character_is_alt = tonumber(entry.character_is_alt)
 		characterTable.is_offspec = tonumber(entry.is_offspec)
 		if ItemListsDB.showMemberNotes then
-			characterTable.character_note = entry.character_note
+			characterTable.character_note = entry.note
 		end
 
 		if itemTable ~= nil then itemTable = itemTable.priolist end -- Look at the priolist element if it exist then load it
